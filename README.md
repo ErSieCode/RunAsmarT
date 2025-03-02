@@ -16,7 +16,7 @@ Hier ist eine umfassende Dokumentation für ein containerisiertes Setup basieren
 ---
 
 ## Architekturübersicht
-![Controller Toolbox Screenshot](https://github.com/ErSieCode/RunAsmarT/blob/main/Ungebungsübersicht.jpg)
+[![Übersicht](https://raw.githubusercontent.com/ErSieCode/RunAsmarT/main/Umgebungsübersicht.jpg)](https://github.com/ErSieCode/RunAsmarT/blob/main/Umgebungsübersicht.jpg)
 
      ```
     graph TD
