@@ -16,86 +16,101 @@ Hier ist eine umfassende Dokumentation für ein containerisiertes Setup basieren
 ---
 
 ## Architekturübersicht
+![Controller Toolbox Screenshot](https://github.com/ErSieCode/RunAsmarT/blob/main/Ungebungsübersicht.jpg)
 
-    ```mermaid
-     graph TD
-        subgraph "Proxmox Host"
-            PVE[Proxmox VE]
-            
-            subgraph "VM: Control Node"
-                AN[Ansible]
-                GIT[Git Repository]
-            end
-            
-            subgraph "VM: Docker Host 1"
-                D1[Docker Engine]
-                
-                subgraph "Container Stack 1"
-                    NC[Nextcloud]
-                    PG[PostgreSQL]
-                    NX[NGINX Reverse Proxy]
-                end
-            end
-            
-            subgraph "VM: Docker Host 2"
-                D2[Docker Engine]
-                
-                subgraph "Container Stack 2"
-                    CS[Code-Server]
-                    N8N[n8n]
-                    DEV[Dev-Environment]
-                end
-            end
-            
-            subgraph "VM: Docker Host 3"
-                D3[Docker Engine]
-                
-                subgraph "Container Stack 3"
-                    WP[WordPress]
-                    SQL[MySQL]
-                end
-            end
+     ```
+    graph TD
+    %% Hardware-Layer
+    subgraph HardwareLayer["Hardware-Layer"]
+        PHYSICAL["Physische Server"]
+    end
+    
+    %% Proxmox-Cluster
+    subgraph ProxmoxCluster["Proxmox-Cluster"]
+        PROXMOX_MASTER["Proxmox Master Node"]
+        PROXMOX_NODE1["Proxmox Node 1"]
+        PROXMOX_NODE2["Proxmox Node 2"]
+        PROXMOX_MASTER --- PROXMOX_NODE1
+        PROXMOX_MASTER --- PROXMOX_NODE2
+    end
+    
+    PHYSICAL --> PROXMOX_MASTER
+    PHYSICAL --> PROXMOX_NODE1
+    PHYSICAL --> PROXMOX_NODE2
+    
+    %% VM-Layer
+    subgraph VMLayer["VM-Layer"]
+        ANSIBLE_VM["Ansible Control Node VM"]
+        DOCKER_VM1["Docker Host VM 1"]
+        DOCKER_VM2["Docker Host VM 2 (Standby)"]
+        STORAGE_VM["Storage VM (NFS)"]
+    end
+    
+    PROXMOX_MASTER --> ANSIBLE_VM
+    PROXMOX_NODE1 --> DOCKER_VM1
+    PROXMOX_NODE2 --> DOCKER_VM2
+    PROXMOX_NODE1 --> STORAGE_VM
+    
+    %% Docker-Services
+    subgraph DockerServices["Docker-Services"]
+        DOCKER["Docker Engine"]
+        COMPOSE["Docker Compose Stack"]
+        
+        %% Core Services
+        subgraph CoreServices["Core Services"]
+            POSTGRES["PostgreSQL"]
+            NGINX["NGINX Reverse Proxy"]
         end
         
-        PVE --> AN
-        AN --> D1
-        AN --> D2
-        AN --> D3
+        %% Anwendungen
+        subgraph Applications["Anwendungen"]
+            N8N["n8n Workflows"]
+            NEXTCLOUD["Nextcloud"]
+            CODESERVER["code-server (VS Code)"]
+            WORDPRESS["WordPress"]
+            MYSQL["MySQL"]
+        end
         
-        GIT --> AN
+        %% Entwicklung
+        subgraph Development["Entwicklung"]
+            DEV_ENV["Dev Environment Container"]
+            NODE["Node.js"]
+            VUE["Vue CLI"]
+            PYTHON["Python"]
+        end
         
-        D1 --> NC
-        D1 --> PG
-        D1 --> NX
-        
-        D2 --> CS
-        D2 --> N8N
-        D2 --> DEV
-        
-        D3 --> WP
-        D3 --> SQL
-        
-        NC --> PG
-        WP --> SQL
-        N8N --> PG
-        
-        NX --> NC
-        NX --> CS
-        NX --> N8N
-        NX --> WP
-        NX --> DEV
-        
-        classDef proxmox fill:#6a329f,color:white;
-        classDef vm fill:#3771c8,color:white;
-        classDef docker fill:#0db7ed,color:white;
-        classDef container fill:#34be5b,color:white;
-        classDef db fill:#f1a340,color:white;
-        
-        class PVE proxmox;
-        class AN,GIT vm;
-        class D1,D2,D3 docker;
-        class NC,CS,N8N,DEV,WP,NX container;
-        class PG,SQL db;
+        DOCKER --> COMPOSE
+        COMPOSE --> POSTGRES
+        COMPOSE --> NGINX
+        COMPOSE --> N8N
+        COMPOSE --> NEXTCLOUD
+        COMPOSE --> CODESERVER
+        COMPOSE --> WORDPRESS
+        COMPOSE --> MYSQL
+        COMPOSE --> DEV_ENV
+        DEV_ENV --> NODE
+        DEV_ENV --> VUE
+        DEV_ENV --> PYTHON
+        WORDPRESS --> MYSQL
+        NEXTCLOUD --> POSTGRES
+        N8N --> POSTGRES
+    end
+    
+    DOCKER_VM1 --> DOCKER
+    DOCKER_VM2 -.->|Failover| DOCKER
+    STORAGE_VM -->|"Persistente Daten"| COMPOSE
+    ANSIBLE_VM -->|"Orchestrierung"| DOCKER_VM1
+    ANSIBLE_VM -->|"Orchestrierung"| DOCKER_VM2
+    
+    %% Benutzer-Layer
+    subgraph UserLayer["Benutzer-Layer"]
+        USER["Endbenutzer"]
+        WEB_UI["Web-Interface"]
+    end
+    
+    USER --> WEB_UI
+    WEB_UI --> NGINX
+
     ```
 
 ---
